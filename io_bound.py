@@ -49,7 +49,7 @@ def run(workload: int) -> int:
 
 # Default workload sized to take roughly a couple of seconds; fsync is slow, so
 # this is much smaller than the CPU workload.
-DEFAULT_WORKLOAD = 2_000
+DEFAULT_WORKLOAD = 10_000
 
 
 if __name__ == "__main__":
