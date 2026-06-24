@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-df = pd.read_csv("results.csv")
+df = pd.read_csv("out/results.csv")
 
 # Each experiment setting is identified by (label, program, workload).
 grouped = df.groupby(["label", "program", "workload"])["seconds"]
@@ -24,5 +24,5 @@ pd.set_option("display.float_format", lambda v: f"{v:.6f}")
 
 print(summary.to_string(index=False))
 
-summary.to_csv("summary.csv", index=False)
-print("\nWrote summary.csv")
+summary.to_csv("out/summary.csv", index=False)
+print("\nWrote out/summary.csv")

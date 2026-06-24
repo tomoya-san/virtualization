@@ -10,14 +10,14 @@ difference between the two runs should be the (virtual vs physical) CPU.
 Examples
 --------
 Native host:
-    python3 benchmark.py --program cpu --label native --trials 10
-    python3 benchmark.py --program io  --label native --trials 10
+    uv run benchmark.py --program cpu --label native --trials 10
+    uv run benchmark.py --program io  --label native --trials 10
 
 UTM guest (same Python version!):
-    python3 benchmark.py --program cpu --label guest --trials 10
-    python3 benchmark.py --program io  --label guest --trials 10
+    uv run benchmark.py --program cpu --label guest --trials 10
+    uv run benchmark.py --program io  --label guest --trials 10
 
-Results accumulate in results.csv so you can compare native vs guest afterwards.
+Results accumulate in out/results.csv so you can compare native vs guest afterwards.
 """
 
 import argparse
@@ -28,6 +28,9 @@ import statistics
 import sys
 import time
 from datetime import datetime, timezone
+
+# Workload programs live in the programs/ subdirectory.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "programs"))
 
 import cpu_bound
 import io_bound
@@ -91,8 +94,21 @@ def summarize(samples):
 
 
 def append_csv(path: str, rows: list):
-    file_exists = os.path.exists(path)
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    file_exists = os.path.exists(path) and os.path.getsize(path) > 0
+    # If the existing file doesn't end with a newline, our first appended row
+    # would otherwise be glued onto its last line and corrupt the CSV.
+    if file_exists:
+        with open(path, "rb") as f:
+            f.seek(-1, os.SEEK_END)
+            needs_newline = f.read(1) != b"\n"
+    else:
+        needs_newline = False
     with open(path, "a", newline="") as f:
+        if needs_newline:
+            f.write("\n")
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         if not file_exists:
             writer.writeheader()
@@ -112,8 +128,8 @@ def main():
                         help="number of untimed warmup runs (default: 2)")
     parser.add_argument("--workload", type=int, default=None,
                         help="workload size; defaults to the program's DEFAULT_WORKLOAD")
-    parser.add_argument("--csv", default="results.csv",
-                        help="output CSV path (default: results.csv)")
+    parser.add_argument("--csv", default="out/results.csv",
+                        help="output CSV path (default: out/results.csv)")
     args = parser.parse_args()
 
     module = PROGRAMS[args.program]
